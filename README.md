@@ -1,76 +1,69 @@
-# Centipede Robot - x86 Assembly Project
+# Centipede Robot — x86 Assembly Firmware
 
-A modern, modular centipede robot control system written entirely in x86 assembly (NASM syntax). This project demonstrates advanced assembly programming techniques including modular architecture, interrupt-driven control, fixed-point mathematics, and multi-segment kinematics.
+A modular NASM assembly firmware prototype for a multi-segment centipede robot. It contains gait generation, kinematics, servo-control abstractions, sensor/communications modules, system state handling, and low-level build scaffolding.
 
-## Architecture
+> **Hardware and execution warning:** This repository is a firmware prototype, not a verified robot controller. The current build targets 32-bit ELF and uses low-level I/O and linker assumptions. Do not connect it to actuators or run it on real hardware until the target platform, interrupt setup, memory map, drivers, and emergency-stop path have been reviewed and tested. Run software tests and simulation first.
 
+## Repository layout
+
+- `src/` — assembly modules for startup, control, gait, kinematics, sensors, servo control, communications, state machine, and diagnostics.
+- `inc/` — shared macros and data structures.
+- `config/` — robot and platform constants.
+- `linker/` — linker script.
+- `build/` — Makefile and Windows build script.
+- `tests/` — assembly-level gait and math test sources.
+- `docs/` — architecture and hardware-interface notes.
+
+## Requirements
+
+- NASM 2.15 or newer
+- GNU binutils (`ld`, `objcopy`, `size`)
+- GNU Make for the Makefile workflow
+- Optional: QEMU and GDB for emulation/debugging (target support depends on the linked image format)
+
+## Build
+
+From the repository root on Linux/WSL:
+
+```sh
+make -C build
 ```
-                    ┌─────────────────────────────────┐
-                    │        Main Controller           │
-                    │  (Gait Engine + State Machine)   │
-                    └─────────────────────────────────┘
-                                │
-                    ┌───────────┴───────────┐
-                    │    Communication Bus  │
-                    │    (I2C / Serial)     │
-                    └───────────┬───────────┘
-                    ┌───────────┼───────────┐
-                    │           │           │
-              ┌─────▼────┐ ┌───▼───┐ ┌─────▼────┐
-              │ Segment 1│ │Seg. 2 │...│ Segment N│
-              │ (Head)   │ │       │   │ (Tail)   │
-              └──────────┘ └───────┘ └──────────┘
+
+Clean generated files:
+
+```sh
+make -C build clean
 ```
 
-## Key Features
+On Windows, use a shell with NASM and a compatible 32-bit linker installed:
 
-- **Modular Segments**: Each body segment runs identical control code
-- **Kinematics Engine**: Real-time inverse kinematics for leg positioning
-- **Gait Patterns**: Multiple gaits (wave, ripple, alternating tripod)
-- **Sensor Fusion**: Collision detection, terrain sensing, balance
-- **Interrupt-Driven**: Timer-based control loops
-- **Fixed-Point Math**: High-precision calculations without FPU
-- **State Machine**: Hierarchical behavior management
-
-## Build Requirements
-
-- NASM (Netwide Assembler) 2.15+
-- GCC or LD (for linking)
-- Windows (with build.bat) or Linux (with Makefile)
-
-## Build Instructions
-
-### Windows
-```bash
+```bat
 cd build
 build.bat
 ```
 
-### Linux
-```bash
-make -f Makefile
-```
+The build scripts compile sources; successful linking alone does not prove the binary is bootable on a particular board or safe for hardware operation.
 
-## Project Structure
+## Development workflow
 
-```
-centipede_robot/
-├── src/           # Assembly source files
-├── inc/           # Include files (macros, equates, structs)
-├── config/        # Configuration constants
-├── linker/        # Linker scripts
-├── build/         # Build output
-├── docs/          # Documentation
-└── tests/         # Unit tests
-```
+1. Review `docs/architecture.md` and `docs/hardware_interface.md`.
+2. Build with NASM and inspect all warnings/errors.
+3. Add host-side or emulator-based tests for pure algorithms (math, gait phase, packet encoding).
+4. Verify memory layout and CPU execution mode against the intended target.
+5. Test the stop path and actuator-disable behavior with outputs disconnected.
+6. Validate sensor and communications drivers against the actual hardware datasheets before connecting the robot.
 
-## Gait Patterns
+## Safety principles
 
-1. **Wave Gait** - Sequential leg movement from tail to head (slow, stable)
-2. **Ripple Gait** - Continuous wave propagation (medium speed)
-3. **Alternating Tripod** - Three legs supporting while three move (fast)
+- The emergency-stop circuit should be independent of the main CPU and software loop.
+- On sensor failure, communication loss, invalid commands, or watchdog timeout, outputs should transition to a hardware-defined safe state.
+- Servo limits, current limits, battery undervoltage, and thermal protection should be enforced at the driver/power stage as well as in firmware.
+- Never test unverified motion code with the robot supported only by its own legs.
+
+## Contributing
+
+Keep changes modular, document hardware assumptions, and include a test or reproducible validation procedure for each behavior change. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT License - See LICENSE file for details
-
+MIT — see [LICENSE](LICENSE).
