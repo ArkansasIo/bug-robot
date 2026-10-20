@@ -1,0 +1,32 @@
+name: Assembly build
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install NASM and binutils
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes nasm binutils make
+
+      - name: Show tool versions
+        run: |
+          nasm -v
+          ld --version | head -n 1
+          make --version | head -n 1
+
+      - name: Build firmware
+        run: make -C build clean all
